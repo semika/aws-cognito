@@ -21,8 +21,8 @@ publishing {
 			//url = uri("https://maven.pkg.github.com/OWNER/REPOSITORY")
 			url = uri("https://maven.pkg.github.com/semika/aws-cognito")
 			credentials {
-				username = project.findProperty("gpr.user") ?: System.getenv("semika")
-				password = project.findProperty("gpr.key") ?: System.getenv("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")
+				username = 'semika'
+				password = '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'
 			}
 		}
 	}
