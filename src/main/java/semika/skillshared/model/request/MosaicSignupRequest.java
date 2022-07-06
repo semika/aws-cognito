@@ -1,6 +1,5 @@
 package semika.skillshared.model.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,8 +7,11 @@ import java.io.Serializable;
 
 @Data
 @Builder
-public class SignupRequest implements Serializable {
+public class MosaicSignupRequest implements Serializable {
     private String firstName;
     private String lastName;
     private String email;
-}
+    private String userName;
+    private String phoneNumber;
+    private String password;
+ }

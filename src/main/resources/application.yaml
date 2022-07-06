@@ -1,0 +1,6 @@
+aws:
+  accessKey: AKIAIZQVIETZUH7A3DVQSEM
+  secretKay: Ar2vBYWBG3rAV/8xi4iBRVz/ldI9JuRvB3lYyr+0KA
+  cognitoPool:
+    clientId: 45l9uo6l5t7l3l3201j783qlsu
+    clientSecret: 1uh4iafogm91u9oo63g0donncfomjgod74e9ktk873727o48vlsm
