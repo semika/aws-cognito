@@ -49,4 +49,10 @@ public class AuthController {
         ConfirmSignUpResponse response = userSignupService.confirmSignup(code);
         return new ResponseEntity<ConfirmSignUpResponse>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/sms")
+    public ResponseEntity<String> sendSms(@RequestParam String phoneNumber) {
+        userSignupService.sendSms("+447700185127");
+        return new ResponseEntity<>("Success", HttpStatus.OK);
+    }
 }

@@ -9,6 +9,11 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
+import software.amazon.awssdk.services.sns.model.SnsException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,7 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserSignupService implements UserSignup {
@@ -184,5 +191,46 @@ public class UserSignupService implements UserSignup {
                 .credentialsProvider(mosaicAWSCredentialProvier)
                 .build();
         return identityProviderClient.confirmSignUp(confirmSignUpRequest);
+    }
+
+    public void sendSms(String phoneNumber) {
+        final String usage = "\n" +
+                "Usage: " +
+                "   <message> <phoneNumber>\n\n" +
+                "Where:\n" +
+                "   message - The message text to send.\n\n" +
+                "   phoneNumber - The mobile phone number to which a message is sent (for example, +1XXX5550100). \n\n";
+
+        String message = "Hi, I am from AWS";
+
+        SnsClient snsClient = SnsClient.builder()
+                .region(Region.AP_SOUTHEAST_1)
+                .credentialsProvider(mosaicAWSCredentialProvier)
+                .build();
+        pubTextSMS(snsClient, message, phoneNumber);
+    }
+
+    //snippet-start:[sns.java2.PublishTextSMS.main]
+    public static void pubTextSMS(SnsClient snsClient, String message, String phoneNumber) {
+        try {
+            Map<String, MessageAttributeValue> attributes = new HashMap();
+
+            attributes.put("AWS.SNS.SMS.SMSType", MessageAttributeValue
+                    .builder().stringValue("Transactional")
+                    .dataType("String").build());
+
+            PublishRequest request = PublishRequest.builder()
+                    .message(message)
+                    .phoneNumber(phoneNumber)
+                    .messageAttributes(attributes)
+                    .build();
+
+            PublishResponse result = snsClient.publish(request);
+            System.out.println(result.messageId() + " Message sent. Status was " + result.sdkHttpResponse().statusCode());
+
+        } catch (SnsException e) {
+            System.err.println(e.awsErrorDetails().errorMessage());
+            System.exit(1);
+        }
     }
 }
