@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import semika.skillshared.model.request.MosaicResendConfirmationCodeRequest;
 import semika.skillshared.model.request.MosaicSignupRequest;
+import semika.skillshared.model.request.MosaicSingupConfirmRequest;
+import semika.skillshared.model.request.UserDto;
 import semika.skillshared.model.response.SignupResponse;
 import semika.skillshared.service.UserSignupService;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpResponse;
@@ -33,9 +36,9 @@ public class AuthController {
     }
 
     @PostMapping("/create-user")
-    public ResponseEntity<String> createUser() {
-        userSignupService.createNewUser();
-        return new ResponseEntity<String>("User creation successful", HttpStatus.OK);
+    public ResponseEntity<String> createUser(@RequestBody UserDto userDto) {
+        String message = userSignupService.createNewUser(userDto);
+        return new ResponseEntity<String>(message, HttpStatus.OK);
     }
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponse> signup(@RequestBody MosaicSignupRequest mosaicSignupRequest) {
@@ -44,10 +47,17 @@ public class AuthController {
     }
 
     @PostMapping("/confirmSignup")
-    public ResponseEntity<ConfirmSignUpResponse> confirmSignup(@RequestParam  String code)
+    public ResponseEntity<ConfirmSignUpResponse> confirmSignup(@RequestBody MosaicSingupConfirmRequest mosaicSingupConfirmRequest)
             throws NoSuchAlgorithmException, InvalidKeyException {
-        ConfirmSignUpResponse response = userSignupService.confirmSignup(code);
+        ConfirmSignUpResponse response = userSignupService.confirmSignup(mosaicSingupConfirmRequest);
         return new ResponseEntity<ConfirmSignUpResponse>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/resendCode")
+    public ResponseEntity<String> resendConfirmationCode(
+            @RequestBody MosaicResendConfirmationCodeRequest mosaicResendConfirmationCodeRequest) {
+        String response = userSignupService.resendConfirmationCode(mosaicResendConfirmationCodeRequest);
+        return new ResponseEntity<String>(response, HttpStatus.OK);
     }
 
     @PostMapping("/sms")

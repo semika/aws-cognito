@@ -3,7 +3,10 @@ package semika.skillshared.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import semika.skillshared.config.AwsConfigProperties;
+import semika.skillshared.model.request.MosaicResendConfirmationCodeRequest;
 import semika.skillshared.model.request.MosaicSignupRequest;
+import semika.skillshared.model.request.MosaicSingupConfirmRequest;
+import semika.skillshared.model.request.UserDto;
 import semika.skillshared.model.response.SignupResponse;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -65,14 +68,8 @@ public class UserSignupService implements UserSignup {
         return SignupResponse.builder().message("new pool id : " + poolId).build();
     }
 
-    public void createNewUser() {
-
-        String firstName = "Semika"; // Input an unique username for the UserPool
-        String lastName = "Siriwardana"; // Input the user phone number for the user Attribute
+    public String createNewUser(UserDto userDto) {
         String userPoolId = "ap-southeast-1_0KzqzRNXe"; // Input the UserPool Id, e.g. us-east-1_xxxxxxxx
-        String password = "Lasanthi#101"; // Input the temporary password for the user
-        String email = "semika.siriwardana@gmail.com"; // Input the email for the user attribute
-
         CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder()
                 .region(Region.AP_SOUTHEAST_1)
                 .credentialsProvider(mosaicAWSCredentialProvier)
@@ -80,27 +77,29 @@ public class UserSignupService implements UserSignup {
 
         try {
             AttributeType userAttrs = AttributeType.builder()
-                    .name("email").value(email)
-                    .name("given_name").value(firstName)
-                    .name("family_name").value(lastName)
-                    .name("preferred_username").value("semikas")
+                    .name("email").value(userDto.getEmail())
+                    .name("given_name").value(userDto.getFirstName())
+                    .name("family_name").value(userDto.getLastName())
+                    .name("preferred_username").value(userDto.getUserName())
                     .name("phone_number").value("+94713258253")
                     .build();
 
             AdminCreateUserRequest userRequest = AdminCreateUserRequest.builder()
                     .userPoolId(userPoolId)
-                    .username(email)
-                    .temporaryPassword(password)
+                    .username(userDto.getEmail())
+                    .temporaryPassword(userDto.getPassword())
                     .userAttributes(userAttrs)
                     .messageAction("SUPPRESS")
                     .build() ;
 
             AdminCreateUserResponse response = cognitoClient.adminCreateUser(userRequest);
-            System.out.println("User " + response.user().username() + "is created. Status: " + response.user().userStatus());
+            return ("User " + response.user().username()
+                    + "is created. Status: "
+                    + response.user().userStatus());
 
         } catch (CognitoIdentityProviderException e){
             System.err.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
+            return "User Creation Failed " + e.awsErrorDetails().errorMessage();
         }
     }
 
@@ -172,18 +171,19 @@ public class UserSignupService implements UserSignup {
         return java.util.Base64.getEncoder().encodeToString(rawHmac);
     }
 
-    public ConfirmSignUpResponse confirmSignup(String code) throws NoSuchAlgorithmException, InvalidKeyException {
+    public ConfirmSignUpResponse confirmSignup(MosaicSingupConfirmRequest mosaicSingupConfirmRequest)
+            throws NoSuchAlgorithmException, InvalidKeyException {
         String clientId = awsConfigProperties.getCognitoPool().getClientId();
         String secretKey = awsConfigProperties.getCognitoPool().getClientSecret();
         String secretVal = calculateSecretHash(clientId,
                 secretKey,
-                "semika.siriwardana@gmail.com");
+                mosaicSingupConfirmRequest.getEmail());
 
         ConfirmSignUpRequest confirmSignUpRequest = ConfirmSignUpRequest.builder()
-                .username("semika.siriwardana@gmail.com")
+                .username(mosaicSingupConfirmRequest.getEmail())
                 .clientId(clientId)
                 .secretHash(secretVal)
-                .confirmationCode(code)
+                .confirmationCode(mosaicSingupConfirmRequest.getCode())
                 .build();
 
         CognitoIdentityProviderClient identityProviderClient = CognitoIdentityProviderClient.builder()
@@ -191,6 +191,39 @@ public class UserSignupService implements UserSignup {
                 .credentialsProvider(mosaicAWSCredentialProvier)
                 .build();
         return identityProviderClient.confirmSignUp(confirmSignUpRequest);
+    }
+    public String resendConfirmationCode(MosaicResendConfirmationCodeRequest mosaicResendConfirmationCodeRequest) {
+        try {
+            CognitoIdentityProviderClient identityProviderClient = CognitoIdentityProviderClient.builder()
+                    .region(Region.AP_SOUTHEAST_1)
+                    .credentialsProvider(mosaicAWSCredentialProvier)
+                    .build();
+            String clientId = awsConfigProperties.getCognitoPool().getClientId();
+            String secretKey = awsConfigProperties.getCognitoPool().getClientSecret();
+
+            String secretVal = calculateSecretHash(clientId,
+                    secretKey,
+                    mosaicResendConfirmationCodeRequest.getEmail());
+
+            ResendConfirmationCodeRequest codeRequest = ResendConfirmationCodeRequest.builder()
+                    .clientId(clientId)
+                    .secretHash(secretVal)
+                    .username(mosaicResendConfirmationCodeRequest.getEmail()) // Need to provide email here.
+                    .build();
+
+            ResendConfirmationCodeResponse response = identityProviderClient.resendConfirmationCode(codeRequest);
+            return ("Method of delivery is " + response.codeDeliveryDetails().deliveryMediumAsString());
+
+        } catch (CognitoIdentityProviderException e) {
+            System.err.println(e.awsErrorDetails().errorMessage());
+            return e.awsErrorDetails().errorMessage();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return e.getMessage();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
     }
 
     public void sendSms(String phoneNumber) {
