@@ -1,6 +1,14 @@
 aws:
-  accessKey: AKIA3C2XA22LEXXPAELRTG
-  secretKay: sGk7F7M5JUwE4xM4x9uDCFoEKCb54l9kd0GgaEca2l
+  accessKey: XXX
+  secretKay: XXXX
   cognitoPool:
-    clientId: 45l9uo6l5t7l3l3201j783qlsu
-    clientSecret: 1uh4iafogm91u9oo63g0donncfomjgod74e9ktk873727o48vlsm
+    poolName: thapro
+    poolId: ap-southeast-1_0KzqzRNXe
+    clientId: 72gr39uikuuse1t12j8tp6rt6h
+    clientSecret: XXXX
+google:
+  clientId : 304677613464-1a3fdbp3kpg9afuu8jdv13860i4gk2f9.apps.googleusercontent.com
+  clientSecret: XXXX
+  redirectUri: http://localhost:3000/google-callback
+  grantType: authorization_code
+  tokenEndPoint: https://oauth2.googleapis.com/token

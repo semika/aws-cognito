@@ -20,6 +20,8 @@ public class AwsConfigProperties {
 
     @Data
     public static class CognitoPool {
+        private String poolName;
+        private String poolId;
         private String clientId;
         private String clientSecret;
     }

@@ -1,7 +1,11 @@
 package semika.skillshared.service;
 
+import org.apache.tomcat.util.buf.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import semika.skillshared.config.AwsConfigProperties;
 import semika.skillshared.model.request.MosaicResendConfirmationCodeRequest;
 import semika.skillshared.model.request.MosaicSignupRequest;
@@ -45,6 +49,7 @@ public class UserSignupService implements UserSignup {
 
         try {
             String userPoolName = "semika-test-pool";
+            //String userPoolName = awsConfigProperties.getCognitoPool().getPoolName();
             cognitoClient = CognitoIdentityProviderClient.builder()
                     .region(Region.AP_SOUTHEAST_1)
                     .credentialsProvider(mosaicAWSCredentialProvier)
@@ -69,7 +74,8 @@ public class UserSignupService implements UserSignup {
     }
 
     public String createNewUser(UserDto userDto) {
-        String userPoolId = "ap-southeast-1_0KzqzRNXe"; // Input the UserPool Id, e.g. us-east-1_xxxxxxxx
+        //String userPoolId = "ap-southeast-1_0KzqzRNXe"; // Input the UserPool Id, e.g. us-east-1_xxxxxxxx
+        String userPoolId = awsConfigProperties.getCognitoPool().getPoolId();
         CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder()
                 .region(Region.AP_SOUTHEAST_1)
                 .credentialsProvider(mosaicAWSCredentialProvier)
@@ -117,6 +123,7 @@ public class UserSignupService implements UserSignup {
         AttributeType family_name = getAttributeType("family_name", mosaicSignupRequest.getLastName());
         AttributeType preferred_username = getAttributeType("preferred_username", mosaicSignupRequest.getUserName());
         AttributeType phone_number = getAttributeType("phone_number", mosaicSignupRequest.getPhoneNumber());
+        AttributeType federated_user = getAttributeType("profile", "Google");
 
         List<AttributeType> attrs = new ArrayList<>();
         attrs.add(email);
@@ -124,6 +131,7 @@ public class UserSignupService implements UserSignup {
         attrs.add(family_name);
         attrs.add(preferred_username);
         attrs.add(phone_number);
+        attrs.add(federated_user);
 
         try {
             String secretVal = calculateSecretHash(clientId, secretKey, mosaicSignupRequest.getEmail());
@@ -265,5 +273,80 @@ public class UserSignupService implements UserSignup {
             System.err.println(e.awsErrorDetails().errorMessage());
             System.exit(1);
         }
+    }
+
+    public String loginWithCustomChallenge(String email) {
+
+        final Map<String, String> authParameters = new HashMap<>();
+        authParameters.put("USERNAME", email);
+        authParameters.put("ChallengeName", "CUSTOM_CHALLENGE");
+
+        CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder()
+                .region(Region.AP_SOUTHEAST_1)
+                .credentialsProvider(mosaicAWSCredentialProvier)
+                .build();
+        String clientId = awsConfigProperties.getCognitoPool().getClientId();
+        String secretKey = awsConfigProperties.getCognitoPool().getClientSecret();
+
+        // Client metadata to tell Lambda what stage this is
+        Map<String, String> clientMetadata = new HashMap<>();
+        clientMetadata.put("flow-type", "SSO");
+
+        try {
+            final InitiateAuthRequest initiateAuthRequest =
+                    InitiateAuthRequest.builder()
+                            .authFlow(AuthFlowType.CUSTOM_AUTH)
+                            .clientId(clientId)
+                            .authParameters(authParameters)
+                            .clientMetadata(clientMetadata)
+                            //.userContextData(UserContextDataType.builder().encodedData().build())
+                            .build();
+
+            final InitiateAuthResponse initiateAuthResponse =
+                    cognitoClient.initiateAuth(initiateAuthRequest);
+
+            System.out.println("Session: " + initiateAuthResponse.session());
+            return initiateAuthResponse.session();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error");
+        }
+    }
+
+    public String responseToAuthChallage(String email, String otp, String session) {
+
+        CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder()
+                .region(Region.AP_SOUTHEAST_1)
+                .credentialsProvider(mosaicAWSCredentialProvier)
+                .build();
+        String clientId = awsConfigProperties.getCognitoPool().getClientId();
+        String secretKey = awsConfigProperties.getCognitoPool().getClientSecret();
+
+        // This will be the challenge parameters (like OTP answer, etc.)
+        Map<String, String> challengeResponses = new HashMap<>();
+        challengeResponses.put("USERNAME", email);
+        challengeResponses.put("ANSWER", otp); // 👈 user’s input (e.g. OTP)
+
+        // Client metadata to tell Lambda what stage this is
+        Map<String, String> clientMetadata = new HashMap<>();
+        clientMetadata.put("flowStage", "SENSITIVE_ACTION");
+
+        RespondToAuthChallengeRequest challengeRequest = RespondToAuthChallengeRequest.builder()
+                .clientId(clientId)
+                .challengeName("CUSTOM_CHALLENGE") // must match challenge from Cognito
+                .session(session)
+                .challengeResponses(challengeResponses)
+                .clientMetadata(clientMetadata)  // ✅ stage info here
+                .build();
+
+        RespondToAuthChallengeResponse challengeResponse =
+                cognitoClient.respondToAuthChallenge(challengeRequest);
+
+        System.out.println("Access Token: " + challengeResponse.authenticationResult().accessToken());
+        System.out.println("Refresh Token: " + challengeResponse.authenticationResult().refreshToken());
+        System.out.println("Id Token: " + challengeResponse.authenticationResult().idToken());
+
+        return "success";
     }
 }
