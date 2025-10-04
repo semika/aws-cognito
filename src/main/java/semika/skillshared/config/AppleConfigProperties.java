@@ -8,12 +8,16 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "google")
-public class GoogleConfigProperties {
+@ConfigurationProperties(prefix = "apple")
+public class AppleConfigProperties {
     private String clientId;
-    private String clientSecret;
+    //private String clientSecret;
     private String redirectUri;
     private String grantType;
     private String tokenEndPoint;
+    private String signinKeyName;
+    private String signinKeyId;
+    private String signinKeyContent;
+    private String teamId;
     private String frontEndRedirectUrl;
 }

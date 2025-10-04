@@ -6,7 +6,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class GoogleTokenRequest implements Serializable {
+public class SocialLoginTokenRequest implements Serializable {
 
     @JsonProperty("code")
     private String code;
