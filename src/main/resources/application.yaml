@@ -1,14 +1,25 @@
 aws:
   accessKey: XXX
-  secretKay: XXXX
+  secretKay: XXX
   cognitoPool:
     poolName: thapro
     poolId: ap-southeast-1_0KzqzRNXe
-    clientId: 72gr39uikuuse1t12j8tp6rt6h
-    clientSecret: XXXX
+    clientId: XXX
+    clientSecret: XXX
 google:
-  clientId : 304677613464-1a3fdbp3kpg9afuu8jdv13860i4gk2f9.apps.googleusercontent.com
+  clientId : XXXX
   clientSecret: XXXX
-  redirectUri: http://localhost:3000/google-callback
+  redirectUri: https://supersacred-nonpersonally-danna.ngrok-free.dev/auth/apple-authoriz-callback
   grantType: authorization_code
   tokenEndPoint: https://oauth2.googleapis.com/token
+  frontEndRedirectUrl : http://localhost:3000/google-callback
+apple:
+  clientId : mosaic.green.apple.login
+  #redirectUri: https://supersacred-nonpersonally-danna.ngrok-free.dev/apple-callback
+  redirectUri: https://supersacred-nonpersonally-danna.ngrok-free.dev/auth/apple-authoriz-callback
+  grantType: authorization_code
+  tokenEndPoint: https://appleid.apple.com/auth/token
+  signinKeyName: XXXXX
+  signinKeyId : XXXX
+  teamId: XXXX
+  frontEndRedirectUrl : http://localhost:3000/apple-callback
