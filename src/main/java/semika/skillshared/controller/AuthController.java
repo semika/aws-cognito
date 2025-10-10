@@ -437,20 +437,31 @@ public class AuthController {
         AppleUser appleUser = appleKeyService.validateTokenAndExtractUser(oAuth2AuthorizeResponse.getIdToken(), publicKey);
 
         ObjectMapper mapper = new ObjectMapper();
-        AppleAuthorizeUserResponse appleAuthorizeUserResponse = mapper.readValue(userJson, AppleAuthorizeUserResponse.class);
-
-        URI uri = new URIBuilder(appleConfigProperties.getFrontEndRedirectUrl())
-                .addParameter("sub", appleUser.getAppleId())
-                .addParameter("firstName", appleAuthorizeUserResponse.getName().getFirstName())
-                .addParameter("lastName", appleAuthorizeUserResponse.getName().getLastName())
-                .addParameter("email", appleAuthorizeUserResponse.getEmail())
-                .build();
-
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Location", uri.toString());
-        // Return a 302 redirect with the Location header
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .headers(headers)
-                .build();
+
+        if (userJson != null) {
+            AppleAuthorizeUserResponse appleAuthorizeUserResponse = mapper.readValue(userJson, AppleAuthorizeUserResponse.class);
+            URI uri = new URIBuilder(appleConfigProperties.getFrontEndRedirectUrl())
+                    .addParameter("sub", appleUser.getAppleId())
+                    .addParameter("firstName", appleAuthorizeUserResponse.getName().getFirstName())
+                    .addParameter("lastName", appleAuthorizeUserResponse.getName().getLastName())
+                    .addParameter("email", appleUser.getEmail())
+                    .build();
+            headers.add("Location", uri.toString());
+            // Return a 302 redirect with the Location header
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .headers(headers)
+                    .build();
+        } else {
+            URI uri = new URIBuilder(appleConfigProperties.getFrontEndRedirectUrl())
+                    .addParameter("sub", appleUser.getAppleId())
+                    .addParameter("email", appleUser.getEmail())
+                    .build();
+            headers.add("Location", uri.toString());
+            // Return a 302 redirect with the Location header
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .headers(headers)
+                    .build();
+        }
     }
 }
