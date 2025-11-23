@@ -31,4 +31,7 @@ public class OAuth2AuthorizeResponse implements Serializable {
     @JsonProperty("refresh_token")
     private String refreshToken;
 
+    @JsonProperty("error")
+    private String error;
+
 }

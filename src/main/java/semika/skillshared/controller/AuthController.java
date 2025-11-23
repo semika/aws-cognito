@@ -106,78 +106,12 @@ public class AuthController {
 
      */
     @CrossOrigin(origins = {"http://localhost:3000", "https://supersacred-nonpersonally-danna.ngrok-free.dev"})
-    @PostMapping("/exchange-token")
+    @PostMapping("/register-user")
     public ResponseEntity<String> exchangeGoogleCode(
-            @RequestBody SocialLoginCode socialLoginCode) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
+            @RequestBody UserRegistrationRequest userRegistrationRequest) throws IOException, InterruptedException, NoSuchAlgorithmException, InvalidKeySpecException {
 
-        log.info("Invoking end point " + googleConfigProperties.getTokenEndPoint()
-                +" with code " + socialLoginCode.getCode());
-
-        SocialLoginTokenRequest socialLoginTokenRequest = new SocialLoginTokenRequest();
-        if (socialLoginCode.getSocialLoginProvier().equals("google")) {
-            socialLoginTokenRequest.setCode(socialLoginCode.getCode());
-            socialLoginTokenRequest.setClientId(googleConfigProperties.getClientId());
-            socialLoginTokenRequest.setClientSecret(googleConfigProperties.getClientSecret());
-            socialLoginTokenRequest.setRedirectUri(googleConfigProperties.getRedirectUri());
-            socialLoginTokenRequest.setGrantType(googleConfigProperties.getGrantType());
-
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(socialLoginTokenRequest);
-            log.info("Making a request to google token end point with data \n\n" + json);
-
-            //Make HttpClient request to google "/token" end point
-            //Create HttpClient
-            HttpClient client = HttpClient.newHttpClient();
-
-            // Build POST request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(googleConfigProperties.getTokenEndPoint())) // test endpoint
-                    .header("Content-Type", "application/json")
-                    .header("User-Agent", "My App")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
-
-            // Send request and get response
-            HttpResponse<String> response = client
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Print response
-            System.out.println("Status code: " + response.statusCode());
-            System.out.println("Response body: " + response.body());
-
-            return new ResponseEntity<>( response.body().toString(), HttpStatus.OK);
-
-        } else {
-            String clientSecret = generateClientSecret(appleConfigProperties.getTeamId(),
-                    appleConfigProperties.getClientId(), appleConfigProperties.getSigninKeyId());
-
-            String url = appleConfigProperties.getTokenEndPoint();
-            Map<String, String> parameters = new HashMap<>();
-            parameters.put("client_id", appleConfigProperties.getClientId());
-            parameters.put("code", socialLoginCode.getCode());
-            parameters.put("client_secret", clientSecret);
-            parameters.put("grant_type", appleConfigProperties.getGrantType());
-            parameters.put("redirect_uri", appleConfigProperties.getRedirectUri());
-
-            String form = parameters.entrySet()
-                    .stream()
-                    .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-                    .collect(Collectors.joining("&"));
-
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(form))
-                    .build();
-
-            HttpResponse<?> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            System.out.println(response.statusCode() + " " + response.body().toString());
-
-            return new ResponseEntity<>( response.body().toString(), HttpStatus.OK);
-        }
-
+        log.info("Registering user " + userRegistrationRequest.toString());
+        return new ResponseEntity<>("User Registration Success", HttpStatus.OK);
     }
 
     private OAuth2AuthorizeResponse exchangeGoogleAuthorizationToken(String code) throws IOException, InterruptedException {
